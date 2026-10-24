@@ -16,3 +16,9 @@ supabase/.temp/
 # OS / editor
 .DS_Store
 *.log
+
+# Next.js / TypeScript
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+coverage/
