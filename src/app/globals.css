@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-arabic), ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-50: #fdf2f6;
+  --color-brand-100: #fbe6ee;
+  --color-brand-200: #f6c7d8;
+  --color-brand-500: #c2477a;
+  --color-brand-600: #a83565;
+  --color-brand-700: #8a2a53;
+  --color-brand-900: #4a1730;
+
+  --color-ink: #1f1a24;
+  --color-muted: #6b6474;
+  --color-line: #ebe6ee;
+  --color-surface: #ffffff;
+  --color-canvas: #faf8fb;
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+}
+
+/* Numbers, times, emails and URLs stay left-to-right inside RTL text. */
+.ltr {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
