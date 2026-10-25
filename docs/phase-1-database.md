@@ -55,8 +55,8 @@
 1. في Supabase Dashboard افتح **Project Settings → API Keys**.
 2. انسخ الملف: `cp .env.example .env.local` (الملف `.env.local` مستثنى في `.gitignore`).
 3. ضع القيم:
-   - `NEXT_PUBLIC_SUPABASE_URL` = `https://ivusybbjhtegrlzftdma.supabase.co`
-   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` = المفتاح الذي يبدأ بـ `sb_publishable_` (آمن في المتصفح لأن RLS تحمي البيانات).
+   - `SALONFLOW_SUPABASE_URL` = `https://ivusybbjhtegrlzftdma.supabase.co`
+   - `SALONFLOW_SUPABASE_PUBLISHABLE_KEY` = المفتاح الذي يبدأ بـ `sb_publishable_` (قيمة عامة، وRLS هي التي تحمي البيانات).
    - `SUPABASE_SECRET_KEY` = المفتاح الذي يبدأ بـ `sb_secret_`. هذا المفتاح يتجاوز RLS، فيُستخدم في الخادم فقط، ولا يوضع أبدًا في متغير يبدأ بـ `NEXT_PUBLIC_` ولا في Git.
 4. عند النشر (مثلًا على Vercel) ضع نفس المتغيرات في إعدادات البيئة في المنصة، وليس في الكود.
 

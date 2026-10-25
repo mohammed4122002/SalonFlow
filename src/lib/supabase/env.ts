@@ -1,11 +1,14 @@
-// Both values are public by design: access to data is enforced by RLS.
-// The secret key is never needed by the web app.
+// App-specific names on purpose: hosting integrations (e.g. Vercel's Supabase
+// store) inject their own NEXT_PUBLIC_SUPABASE_* values at runtime, which
+// silently pointed production at a different project. Only server code uses
+// these, so they need no NEXT_PUBLIC_ prefix. Both values are public anyway:
+// access to data is enforced by RLS, and the secret key is never used here.
 export function supabaseEnv() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const url = process.env.SALONFLOW_SUPABASE_URL;
+  const publishableKey = process.env.SALONFLOW_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !publishableKey) {
     throw new Error(
-      "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (see .env.example)",
+      "Missing SALONFLOW_SUPABASE_URL or SALONFLOW_SUPABASE_PUBLISHABLE_KEY (see .env.example)",
     );
   }
   return { url, publishableKey };
