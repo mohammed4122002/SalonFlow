@@ -28,13 +28,15 @@ Files: `router.js`, `services_menu.js`, `specialists_menu.js`, `slots_menu.js`, 
 ### 2. «SalonFlow — إشعارات صالون نور (Webhook)»
 
 ```
-Webhook POST /webhook/salonflow-noor ─► Crypto: HMAC-SHA256(body, secret) ─► Check Signature & Build Message ─► Telegram
+Webhook POST /webhook/salonflow-noor ─► Canonicalize Body ─► Crypto: HMAC-SHA256(canonical, secret) ─► Check Signature & Build Message ─► Telegram
 ```
 
 - Requests with a bad signature, or older than 10 minutes, are ignored.
 - Only bookings with `channel_ref = tg:<chat_id>` get a Telegram message. Website bookings and `test` events are skipped.
 
-File: `check_webhook.js`. A built-in Crypto node is used because self-hosted n8n blocks `require('crypto')` in Code nodes by default.
+- The platform signs **canonical JSON** (keys sorted recursively), and «Canonicalize Body» rebuilds the same text. This matters because n8n reorders the keys of the parsed body.
+
+Files: `canonicalize_body.js`, `check_webhook.js`. A built-in Crypto node is used because self-hosted n8n blocks `require('crypto')` in Code nodes by default.
 
 ## Setup (once per salon)
 

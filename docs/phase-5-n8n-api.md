@@ -79,17 +79,15 @@ X-SalonFlow-Signature: sha256=<HMAC-SHA256(body, webhook_secret) hex>
   "starts_at": "…", "timezone": "Asia/Gaza", "service": {…}, "specialist": {…}, "customer": {…}, "salon": {…} } }
 ```
 
+- جسم الطلب JSON **قانوني** (مفاتيح الكائنات مرتّبة أبجديًا على كل المستويات)، والتوقيع على هذا النص نفسه. فيمكن التحقق إما من الجسم الخام، أو بإعادة بناء JSON مرتّب المفاتيح من الجسم بعد قراءته (كما في `n8n/salon-noor/canonicalize_body.js`).
 - الرابط يجب أن يكون https عامًا. الروابط المحلية والعناوين الخاصة مرفوضة (حماية من SSRF)، وإعادة التوجيه لا تُتبع، والمهلة 8 ثوانٍ.
 - التحقق من التوقيع في n8n (عقدة Code):
 
-```js
-const crypto = require('crypto');
-const body = JSON.stringify($json.body);   // أو الجسم الخام إن كان متاحًا
-const expected = 'sha256=' + crypto.createHmac('sha256', $env.SALONFLOW_WEBHOOK_SECRET).update(body).digest('hex');
-if ($json.headers['x-salonflow-signature'] !== expected) throw new Error('bad signature');
-```
+1. عقدة Code تبني النص القانوني من `$json.body`.
+2. عقدة Crypto (HMAC، SHA256، hex) تحسب التوقيع عليه بسرّ الصالون.
+3. عقدة Code تقارن `sha256=<الناتج>` مع الترويسة `x-salonflow-signature`، وترفض الطلب إن كان أقدم من 10 دقائق.
 
-> الأدق هو حساب التوقيع على الجسم الخام. في عقدة Webhook فعّل خيار «Raw Body» إن توفر.
+لا تستخدم `JSON.stringify($json.body)` مباشرة، لأن n8n قد يغيّر ترتيب المفاتيح.
 
 ## إعداد Workflow بوت Telegram في n8n (لكل صالون)
 

@@ -105,6 +105,7 @@ export function sendSalonNewBookingEmail(salonEmail: string | null, b: BookingDe
 // ---------------------------------------------------------------------------
 // Outbound webhook to the salon's own n8n workflow, signed with its secret:
 //   X-SalonFlow-Signature: sha256=<hex HMAC of the raw body>
+// The body is canonical JSON (sorted keys), see canonicalJson().
 // ---------------------------------------------------------------------------
 
 export type WebhookTarget = { url: string; secret: string };
@@ -124,6 +125,19 @@ function isSafeWebhookUrl(raw: string): boolean {
   }
 }
 
+/** JSON with object keys sorted recursively, so receivers that re-serialize
+ *  a parsed body (e.g. n8n) can reproduce the exact signed bytes. */
+export function canonicalJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .filter(([, v]) => v !== undefined)
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+    return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${canonicalJson(v)}`).join(",")}}`;
+  }
+  return JSON.stringify(value ?? null);
+}
+
 export function signPayload(secret: string, body: string): string {
   return `sha256=${createHmac("sha256", secret).update(body).digest("hex")}`;
 }
@@ -134,7 +148,7 @@ export async function deliverWebhook(
   data: unknown,
 ): Promise<{ ok: boolean; status: string }> {
   if (!isSafeWebhookUrl(target.url)) return { ok: false, status: "رابط غير مسموح (يجب أن يكون https عامًا)" };
-  const body = JSON.stringify({ event, sent_at: new Date().toISOString(), data });
+  const body = canonicalJson({ event, sent_at: new Date().toISOString(), data });
   try {
     const res = await fetch(target.url, {
       method: "POST",
