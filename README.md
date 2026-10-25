@@ -15,7 +15,7 @@
 
 ```bash
 npm install
-cp .env.example .env.local   # ضع NEXT_PUBLIC_SUPABASE_URL و NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+cp .env.example .env.local   # ضع SALONFLOW_SUPABASE_URL و SALONFLOW_SUPABASE_PUBLISHABLE_KEY
 npm run dev
 ```
 

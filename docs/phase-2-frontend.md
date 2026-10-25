@@ -59,8 +59,8 @@ Next.js 16 (App Router) + TypeScript + Tailwind CSS 4 + Supabase (`@supabase/ssr
 ## النشر على Vercel
 
 1. **متغيرات البيئة** (Production و Preview):
-   - `NEXT_PUBLIC_SUPABASE_URL` = `https://ivusybbjhtegrlzftdma.supabase.co`
-   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` = المفتاح الذي يبدأ بـ `sb_publishable_`
+   - `SALONFLOW_SUPABASE_URL` = `https://ivusybbjhtegrlzftdma.supabase.co`
+   - `SALONFLOW_SUPABASE_PUBLISHABLE_KEY` = المفتاح الذي يبدأ بـ `sb_publishable_`
 2. **Supabase → Authentication → URL Configuration:**
    - **Site URL** = رابط موقعك على Vercel (مثل `https://salonflow.vercel.app`).
    - **Redirect URLs**: أضف `https://<your-domain>/**`. ولروابط المعاينة أضف `https://*-<vercel-team>.vercel.app/**`.
