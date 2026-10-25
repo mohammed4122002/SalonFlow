@@ -1,7 +1,11 @@
 "use server";
 
 import { refresh } from "next/cache";
-import { requireManagedSalon } from "@/lib/auth";
+import { after } from "next/server";
+import type { BookingDetails } from "@/lib/booking";
+import { deliverWebhook, sendCustomerBookingEmail } from "@/lib/notifications";
+import { siteOrigin } from "@/lib/site-url";
+import { editBlockedReason, requireManagedSalon } from "@/lib/auth";
 import { dbErrorMessage } from "@/lib/errors";
 import { type ActionState, checkbox, numberField, optionalText, text } from "@/lib/forms";
 import { createClient } from "@/lib/supabase/server";
@@ -17,6 +21,8 @@ const SAVED: ActionState = { success: "تم الحفظ." };
 
 export async function updateSalon(salonId: string, _: ActionState, formData: FormData): Promise<ActionState> {
   await requireManagedSalon(salonId);
+  const blocked = await editBlockedReason(salonId);
+  if (blocked) return { error: blocked };
   const fields = readSalonFields(formData);
   if (!fields.name || !fields.slug || !fields.timezone || !fields.currency) {
     return { error: "يرجى تعبئة الاسم والرابط والمنطقة الزمنية والعملة." };
@@ -30,6 +36,8 @@ export async function updateSalon(salonId: string, _: ActionState, formData: For
 
 export async function setPublished(salonId: string, publish: boolean): Promise<ActionState> {
   await requireManagedSalon(salonId);
+  const blocked = await editBlockedReason(salonId);
+  if (blocked) return { error: blocked };
   const supabase = await createClient();
 
   if (publish) {
@@ -72,6 +80,8 @@ function readService(formData: FormData) {
 
 export async function createService(salonId: string, _: ActionState, formData: FormData): Promise<ActionState> {
   await requireManagedSalon(salonId);
+  const blocked = await editBlockedReason(salonId);
+  if (blocked) return { error: blocked };
   const parsed = readService(formData);
   if ("error" in parsed) return { error: parsed.error };
   const supabase = await createClient();
@@ -88,6 +98,8 @@ export async function updateService(
   formData: FormData,
 ): Promise<ActionState> {
   await requireManagedSalon(salonId);
+  const blocked = await editBlockedReason(salonId);
+  if (blocked) return { error: blocked };
   const parsed = readService(formData);
   if ("error" in parsed) return { error: parsed.error };
   const supabase = await createClient();
@@ -99,6 +111,8 @@ export async function updateService(
 
 export async function deleteService(salonId: string, serviceId: string): Promise<ActionState> {
   await requireManagedSalon(salonId);
+  const blocked = await editBlockedReason(salonId);
+  if (blocked) return { error: blocked };
   const supabase = await createClient();
   const { error } = await supabase.from("services").delete().eq("id", serviceId).eq("salon_id", salonId);
   if (error) return { error: dbErrorMessage(error) };
@@ -154,6 +168,8 @@ function selectedServices(formData: FormData): string[] {
 
 export async function createSpecialist(salonId: string, _: ActionState, formData: FormData): Promise<ActionState> {
   await requireManagedSalon(salonId);
+  const blocked = await editBlockedReason(salonId);
+  if (blocked) return { error: blocked };
   const values = readSpecialist(formData);
   if (values.full_name.length < 2) return { error: "اسم الأخصائية مطلوب." };
 
@@ -178,6 +194,8 @@ export async function updateSpecialist(
   formData: FormData,
 ): Promise<ActionState> {
   await requireManagedSalon(salonId);
+  const blocked = await editBlockedReason(salonId);
+  if (blocked) return { error: blocked };
   const values = readSpecialist(formData);
   if (values.full_name.length < 2) return { error: "اسم الأخصائية مطلوب." };
 
@@ -193,6 +211,8 @@ export async function updateSpecialist(
 
 export async function deleteSpecialist(salonId: string, specialistId: string): Promise<ActionState> {
   await requireManagedSalon(salonId);
+  const blocked = await editBlockedReason(salonId);
+  if (blocked) return { error: blocked };
   const supabase = await createClient();
   const { error } = await supabase.from("specialists").delete().eq("id", specialistId).eq("salon_id", salonId);
   if (error) return { error: dbErrorMessage(error) };
@@ -204,6 +224,8 @@ export async function deleteSpecialist(salonId: string, specialistId: string): P
 
 export async function addWorkingHours(salonId: string, _: ActionState, formData: FormData): Promise<ActionState> {
   await requireManagedSalon(salonId);
+  const blocked = await editBlockedReason(salonId);
+  if (blocked) return { error: blocked };
   const days = formData
     .getAll("days")
     .map(Number)
@@ -233,6 +255,8 @@ export async function addWorkingHours(salonId: string, _: ActionState, formData:
 
 export async function deleteWorkingHours(salonId: string, id: string): Promise<ActionState> {
   await requireManagedSalon(salonId);
+  const blocked = await editBlockedReason(salonId);
+  if (blocked) return { error: blocked };
   const supabase = await createClient();
   const { error } = await supabase.from("working_hours").delete().eq("id", id).eq("salon_id", salonId);
   if (error) return { error: dbErrorMessage(error) };
@@ -242,6 +266,8 @@ export async function deleteWorkingHours(salonId: string, id: string): Promise<A
 
 export async function addTimeOff(salonId: string, _: ActionState, formData: FormData): Promise<ActionState> {
   const { salon } = await requireManagedSalon(salonId);
+  const blocked = await editBlockedReason(salonId);
+  if (blocked) return { error: blocked };
   const startsAt = zonedLocalToUtcIso(text(formData, "starts_at"), salon.timezone);
   const endsAt = zonedLocalToUtcIso(text(formData, "ends_at"), salon.timezone);
   if (!startsAt || !endsAt) return { error: "أدخل تاريخ ووقت البداية والنهاية." };
@@ -262,9 +288,142 @@ export async function addTimeOff(salonId: string, _: ActionState, formData: Form
 
 export async function deleteTimeOff(salonId: string, id: string): Promise<ActionState> {
   await requireManagedSalon(salonId);
+  const blocked = await editBlockedReason(salonId);
+  if (blocked) return { error: blocked };
   const supabase = await createClient();
   const { error } = await supabase.from("time_off").delete().eq("id", id).eq("salon_id", salonId);
   if (error) return { error: dbErrorMessage(error) };
   refresh();
   return null;
+}
+
+// ---------------------------------------------------------------- bookings
+
+async function loadBookingDetails(bookingId: string, salonId: string): Promise<BookingDetails | null> {
+  const supabase = await createClient();
+  const { data: b } = await supabase
+    .from("bookings")
+    .select(
+      "id, status, starts_at, ends_at, price, notes, source, channel_ref, cancelled_at, created_at, public_token, " +
+        "customers(full_name, phone, email), services(id, name, duration_minutes), specialists(id, full_name), " +
+        "salons(id, name, slug, phone, address, currency, timezone)",
+    )
+    .eq("id", bookingId)
+    .eq("salon_id", salonId)
+    .maybeSingle()
+    .overrideTypes<BookingRow>();
+  if (!b || !b.customers || !b.services || !b.specialists || !b.salons) return null;
+  return {
+    id: b.id,
+    status: b.status,
+    starts_at: b.starts_at,
+    ends_at: b.ends_at,
+    price: b.price,
+    currency: b.salons.currency,
+    timezone: b.salons.timezone,
+    notes: b.notes,
+    source: b.source,
+    channel_ref: b.channel_ref,
+    cancelled_at: b.cancelled_at,
+    created_at: b.created_at,
+    can_cancel: b.status === "pending" && new Date(b.starts_at) > new Date(),
+    salon: { id: b.salons.id, name: b.salons.name, slug: b.salons.slug, phone: b.salons.phone, address: b.salons.address },
+    service: b.services,
+    specialist: b.specialists,
+    customer: b.customers,
+    token: b.public_token,
+  };
+}
+
+type BookingRow = {
+  id: string;
+  status: "pending" | "confirmed" | "cancelled";
+  starts_at: string;
+  ends_at: string;
+  price: number;
+  notes: string | null;
+  source: string;
+  channel_ref: string | null;
+  cancelled_at: string | null;
+  created_at: string;
+  public_token: string;
+  customers: { full_name: string; phone: string; email: string } | null;
+  services: { id: string; name: string; duration_minutes: number } | null;
+  specialists: { id: string; full_name: string } | null;
+  salons: { id: string; name: string; slug: string; phone: string | null; address: string | null; currency: string; timezone: string } | null;
+};
+
+// Email the customer and notify the salon's n8n workflow, after the response.
+async function notifyStatusChange(salonId: string, booking: BookingDetails, event: "confirmed" | "cancelled") {
+  const origin = await siteOrigin();
+  const supabase = await createClient();
+  const { data: integration } = await supabase
+    .from("salon_integrations")
+    .select("enabled, webhook_url, webhook_secret")
+    .eq("salon_id", salonId)
+    .maybeSingle();
+
+  after(async () => {
+    await sendCustomerBookingEmail(event, booking, `${origin}/bookings/${booking.token}`);
+    if (integration?.enabled && integration.webhook_url) {
+      const { token: _token, ...publicBooking } = booking;
+      void _token;
+      const result = await deliverWebhook(
+        { url: integration.webhook_url, secret: integration.webhook_secret },
+        `booking.${event}`,
+        publicBooking,
+      );
+      await supabase
+        .from("salon_integrations")
+        .update({ last_webhook_at: new Date().toISOString(), last_webhook_status: `booking.${event}: ${result.status}` })
+        .eq("salon_id", salonId);
+    }
+  });
+}
+
+export async function confirmBooking(salonId: string, bookingId: string): Promise<ActionState> {
+  await requireManagedSalon(salonId);
+  const blocked = await editBlockedReason(salonId);
+  if (blocked) return { error: blocked };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("bookings")
+    .update({ status: "confirmed" })
+    .eq("id", bookingId)
+    .eq("salon_id", salonId)
+    .eq("status", "pending")
+    .select("id");
+  if (error) return { error: dbErrorMessage(error) };
+  if (!data.length) return { error: "لا يمكن تأكيد هذا الحجز (ربما أُلغي أو تم تأكيده)." };
+
+  const booking = await loadBookingDetails(bookingId, salonId);
+  if (booking) await notifyStatusChange(salonId, booking, "confirmed");
+  refresh();
+  return { success: "تم تأكيد الحجز وإبلاغ العميل." };
+}
+
+export async function cancelBookingByOwner(
+  salonId: string,
+  bookingId: string,
+  _: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  // Allowed even when the account is suspended, so customers can be informed.
+  await requireManagedSalon(salonId);
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("bookings")
+    .update({ status: "cancelled", cancellation_reason: optionalText(formData, "reason") ?? "ألغاه الصالون" })
+    .eq("id", bookingId)
+    .eq("salon_id", salonId)
+    .neq("status", "cancelled")
+    .select("id");
+  if (error) return { error: dbErrorMessage(error) };
+  if (!data.length) return { error: "هذا الحجز ملغي مسبقًا." };
+
+  const booking = await loadBookingDetails(bookingId, salonId);
+  if (booking) await notifyStatusChange(salonId, booking, "cancelled");
+  refresh();
+  return { success: "تم إلغاء الحجز وتحرير الموعد وإبلاغ العميل." };
 }

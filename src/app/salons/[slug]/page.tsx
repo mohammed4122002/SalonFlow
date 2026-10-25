@@ -1,8 +1,11 @@
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { Badge, Card, Skeleton } from "@/components/ui";
 import { DAY_NAMES, formatDuration, formatPrice, formatTime } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
+import { subscriptionValid } from "@/lib/subscription";
+import { BookingWidget } from "./booking-widget";
 
 export default function SalonPage({ params }: PageProps<"/salons/[slug]">) {
   return (
@@ -45,13 +48,26 @@ async function SalonDetails({ params }: { params: PageProps<"/salons/[slug]">["p
   ]);
 
   const serviceNames = new Map((services ?? []).map((s) => [s.id, s.name]));
-  const isPublic = salon.is_published && salon.status === "active";
+  // Visitors only ever receive public salons (RLS). For the owner's preview,
+  // the subscription decides whether the salon is actually live.
+  await connection();
+  const { data: auth } = await supabase.auth.getClaims();
+  const { data: sub } = auth?.claims
+    ? await supabase
+        .from("subscriptions")
+        .select("status, trial_ends_at, current_period_end")
+        .eq("salon_id", salon.id)
+        .maybeSingle()
+    : { data: null };
+  const now = new Date();
+  const isPublic = salon.is_published && salon.status === "active" && (!sub || subscriptionValid(sub, now));
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 sm:py-12">
       {!isPublic && (
         <p className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          معاينة: هذا الصالون غير ظاهر للزوار حاليًا ({salon.status === "suspended" ? "معلّق" : "غير منشور"}).
+          معاينة: هذا الصالون غير ظاهر للزوار حاليًا (
+          {salon.status === "suspended" ? "معلّق" : !salon.is_published ? "غير منشور" : "انتهى الاشتراك"}).
         </p>
       )}
 
@@ -159,9 +175,24 @@ async function SalonDetails({ params }: { params: PageProps<"/salons/[slug]">["p
               })}
             </dl>
           </Card>
-          <Card className="bg-brand-50">
-            <p className="font-semibold text-brand-900">الحجز الإلكتروني</p>
-            <p className="mt-1 text-sm text-brand-900/80">سيتاح الحجز المباشر من هذه الصفحة قريبًا.</p>
+          <Card id="book" className="border-brand-200">
+            <h2 className="mb-4 text-lg font-bold">احجزي موعدك</h2>
+            {isPublic ? (
+              <BookingWidget
+                salonId={salon.id}
+                timezone={salon.timezone}
+                nowMs={now.getTime()}
+                currency={salon.currency}
+                services={services ?? []}
+                specialists={(specialists ?? []).map((sp) => ({
+                  id: sp.id,
+                  full_name: sp.full_name,
+                  serviceIds: sp.specialist_services.map((l) => l.service_id),
+                }))}
+              />
+            ) : (
+              <p className="text-sm text-muted">الحجز غير متاح لأن الصالون غير ظاهر للزوار حاليًا.</p>
+            )}
           </Card>
         </aside>
       </div>

@@ -7,6 +7,7 @@ import type { Enums } from "@/lib/database.types";
 import { requireManagedSalon } from "@/lib/auth";
 import { BOOKING_STATUS_LABELS, formatDateTime, formatPrice } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
+import { BookingActions } from "./booking-actions";
 
 export const metadata: Metadata = { title: "الحجوزات" };
 
@@ -26,7 +27,7 @@ export default function BookingsPage({ params, searchParams }: Props) {
 async function Bookings({ params, searchParams }: Pick<Props, "params" | "searchParams">) {
   const { salonId } = await params;
   const sp = await searchParams;
-  const { salon } = await requireManagedSalon(salonId);
+  const { salon, canEdit } = await requireManagedSalon(salonId);
   await connection();
 
   const status = STATUSES.find((s) => s === sp.status);
@@ -37,7 +38,7 @@ async function Bookings({ params, searchParams }: Pick<Props, "params" | "search
   let query = supabase
     .from("bookings")
     .select(
-      "id, starts_at, ends_at, status, price, notes, customers(full_name, phone, email), services(name), specialists(full_name)",
+      "id, starts_at, ends_at, status, price, notes, source, customers(full_name, phone, email), services(name), specialists(full_name)",
     )
     .eq("salon_id", salonId)
     .limit(200);
@@ -79,15 +80,11 @@ async function Bookings({ params, searchParams }: Pick<Props, "params" | "search
         ))}
       </div>
 
-      <p className="mb-4 rounded-xl bg-canvas px-3 py-2 text-xs text-muted">
-        تأكيد الحجوزات وإلغاؤها وإرسال الإشعارات ستتاح مع نظام الحجز في المرحلة القادمة.
-      </p>
-
       {bookings.length === 0 ? (
         <EmptyState title="لا توجد حجوزات" description="ستظهر هنا حجوزات العملاء حسب الفلتر المختار." />
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-line bg-surface">
-          <table className="w-full min-w-[720px] text-sm">
+          <table className="w-full min-w-[880px] text-sm">
             <thead className="bg-canvas text-start text-xs text-muted">
               <tr>
                 <th className="p-3 text-start font-medium">الموعد</th>
@@ -96,21 +93,30 @@ async function Bookings({ params, searchParams }: Pick<Props, "params" | "search
                 <th className="p-3 text-start font-medium">الأخصائية</th>
                 <th className="p-3 text-start font-medium">السعر</th>
                 <th className="p-3 text-start font-medium">الحالة</th>
+                <th className="p-3 text-start font-medium">إجراءات</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
               {bookings.map((b) => (
-                <tr key={b.id}>
+                <tr key={b.id} className="align-top">
                   <td className="p-3 whitespace-nowrap">{formatDateTime(b.starts_at, salon.timezone)}</td>
                   <td className="p-3">
                     <p className="font-medium">{b.customers?.full_name}</p>
                     <p className="ltr text-start text-xs text-muted">{b.customers?.phone}</p>
+                    <p className="ltr text-start text-xs text-muted">{b.customers?.email}</p>
+                    {b.notes && <p className="mt-1 max-w-48 text-xs text-muted">«{b.notes}»</p>}
                   </td>
                   <td className="p-3">{b.services?.name}</td>
                   <td className="p-3">{b.specialists?.full_name}</td>
                   <td className="p-3 whitespace-nowrap">{formatPrice(b.price, salon.currency)}</td>
                   <td className="p-3">
                     <Badge tone={STATUS_TONE[b.status]}>{BOOKING_STATUS_LABELS[b.status]}</Badge>
+                    {b.source === "api" && (
+                      <span className="mt-1 block text-xs text-muted">عبر البوت</span>
+                    )}
+                  </td>
+                  <td className="p-3">
+                    <BookingActions salonId={salonId} bookingId={b.id} status={b.status} canEdit={canEdit} />
                   </td>
                 </tr>
               ))}

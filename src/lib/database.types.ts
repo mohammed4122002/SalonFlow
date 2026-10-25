@@ -21,14 +21,17 @@ export type Database = {
         Row: {
           cancellation_reason: string | null
           cancelled_at: string | null
+          channel_ref: string | null
           created_at: string
           customer_id: string
           ends_at: string
           id: string
           notes: string | null
           price: number
+          public_token: string
           salon_id: string
           service_id: string
+          source: string
           specialist_id: string
           starts_at: string
           status: Database["public"]["Enums"]["booking_status"]
@@ -38,6 +41,7 @@ export type Database = {
         Insert: {
           cancellation_reason?: string | null
           cancelled_at?: string | null
+          channel_ref?: string | null
           created_at?: string
           customer_id: string
           ends_at: string
@@ -55,6 +59,7 @@ export type Database = {
         Update: {
           cancellation_reason?: string | null
           cancelled_at?: string | null
+          channel_ref?: string | null
           created_at?: string
           customer_id?: string
           ends_at?: string
@@ -170,6 +175,44 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      salon_integrations: {
+        Row: {
+          api_key_created_at: string | null
+          api_key_prefix: string | null
+          created_at: string
+          enabled: boolean
+          last_used_at: string | null
+          last_webhook_at: string | null
+          last_webhook_status: string | null
+          salon_id: string
+          telegram_bot_username: string | null
+          updated_at: string
+          webhook_secret: string
+          webhook_url: string | null
+        }
+        Insert: {
+          enabled?: boolean
+          salon_id: string
+          telegram_bot_username?: string | null
+          webhook_url?: string | null
+        }
+        Update: {
+          enabled?: boolean
+          last_webhook_at?: string | null
+          last_webhook_status?: string | null
+          telegram_bot_username?: string | null
+          webhook_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salon_integrations_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: true
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       salons: {
         Row: {
@@ -367,6 +410,37 @@ export type Database = {
           },
         ]
       }
+      subscription_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          details: Json
+          event: string
+          id: number
+          salon_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          event: string
+          salon_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          details?: Json
+          event?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_events_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           created_at: string
@@ -518,7 +592,51 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      timemultirange: { Args: never; Returns: unknown }
+      api_availability: {
+        Args: { p_api_key: string; p_date: string; p_service_id: string; p_specialist_id?: string | null }
+        Returns: Json
+      }
+      api_cancel_booking: { Args: { p_api_key: string; p_booking_id: string }; Returns: Json }
+      api_create_booking: {
+        Args: {
+          p_api_key: string
+          p_channel_ref?: string | null
+          p_email: string
+          p_full_name: string
+          p_idempotency_key?: string | null
+          p_notes?: string | null
+          p_phone: string
+          p_service_id: string
+          p_specialist_id: string | null
+          p_starts_at: string
+        }
+        Returns: Json
+      }
+      api_get_booking: { Args: { p_api_key: string; p_booking_id: string }; Returns: Json }
+      api_salon_info: { Args: { p_api_key: string }; Returns: Json }
+      api_services: { Args: { p_api_key: string }; Returns: Json }
+      api_specialists: { Args: { p_api_key: string; p_service_id?: string | null }; Returns: Json }
+      cancel_booking_by_token: { Args: { p_token: string }; Returns: Json }
+      create_booking: {
+        Args: {
+          p_email: string
+          p_full_name: string
+          p_notes?: string | null
+          p_phone: string
+          p_salon_id: string
+          p_service_id: string
+          p_specialist_id: string | null
+          p_starts_at: string
+        }
+        Returns: Json
+      }
+      get_available_slots: {
+        Args: { p_date: string; p_salon_id: string; p_service_id: string; p_specialist_id: string | null }
+        Returns: { ends_at: string; specialist_id: string; specialist_name: string; starts_at: string }[]
+      }
+      get_booking_by_token: { Args: { p_token: string }; Returns: Json }
+      rotate_integration_key: { Args: { p_salon_id: string }; Returns: string }
+      rotate_webhook_secret: { Args: { p_salon_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "super_admin" | "salon_owner"
