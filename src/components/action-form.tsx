@@ -49,15 +49,17 @@ export function SubmitButton({
   variant = "primary",
   className = "",
   pendingText = "جارٍ الحفظ…",
+  disabled = false,
 }: {
   children: ReactNode;
   variant?: keyof typeof buttonStyles;
   className?: string;
   pendingText?: string;
+  disabled?: boolean;
 }) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" disabled={pending} className={`${buttonStyles[variant]} ${className}`}>
+    <button type="submit" disabled={pending || disabled} className={`${buttonStyles[variant]} ${className}`}>
       {pending ? pendingText : children}
     </button>
   );
