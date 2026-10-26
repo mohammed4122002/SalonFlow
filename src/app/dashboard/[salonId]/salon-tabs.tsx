@@ -9,6 +9,7 @@ const TABS = [
   { href: "/services", label: "الخدمات" },
   { href: "/specialists", label: "الأخصائيات" },
   { href: "/hours", label: "أوقات العمل" },
+  { href: "/media", label: "الصور" },
   { href: "/integrations", label: "الربط (n8n)" },
   { href: "/subscription", label: "الاشتراك" },
   { href: "/settings", label: "الإعدادات" },

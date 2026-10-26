@@ -1,10 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { Badge, EmptyState, PageHeader, Skeleton, buttonStyles } from "@/components/ui";
+import {
+  Badge,
+  EmptyState,
+  PageHeader,
+  Skeleton,
+  buttonStyles,
+} from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { SALON_STATUS_LABELS } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
+import { SalonCover, SalonLogo } from "@/components/salon-visuals";
+import { mediaUrl } from "@/lib/media";
 
 export const metadata: Metadata = { title: "لوحة التحكم" };
 
@@ -32,7 +40,7 @@ async function SalonList() {
   const supabase = await createClient();
   const { data: salons, error } = await supabase
     .from("salons")
-    .select("id, name, slug, city, status, is_published")
+    .select("id, name, slug, city, status, is_published, logo_path, cover_path")
     .eq("owner_id", user.id)
     .order("created_at");
   if (error) throw error;
@@ -57,13 +65,38 @@ async function SalonList() {
         <li key={salon.id}>
           <Link
             href={`/dashboard/${salon.id}`}
-            className="block rounded-2xl border border-line bg-surface p-5 shadow-sm transition hover:border-brand-200 hover:shadow-md"
+            className="group block overflow-hidden rounded-3xl border border-line/80 bg-surface shadow-soft transition duration-500 hover:-translate-y-1 hover:shadow-lift"
           >
-            <p className="font-bold">{salon.name}</p>
-            <p className="ltr mt-0.5 text-start text-xs text-muted">/salons/{salon.slug}</p>
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              <Badge tone={salon.status === "active" ? "green" : "red"}>{SALON_STATUS_LABELS[salon.status]}</Badge>
-              <Badge tone={salon.is_published ? "brand" : "neutral"}>{salon.is_published ? "منشور" : "غير منشور"}</Badge>
+            <div className="relative h-28 overflow-hidden">
+              <SalonCover
+                src={mediaUrl(salon.cover_path)}
+                name={salon.name}
+                sizes="(min-width: 1024px) 360px, 100vw"
+                className="transition duration-700 group-hover:scale-105"
+              />
+            </div>
+            <div className="px-5 pb-5">
+              <div className="-mt-7 flex items-end gap-3">
+                <SalonLogo
+                  src={mediaUrl(salon.logo_path)}
+                  name={salon.name}
+                  className="size-14 text-xl"
+                />
+                <p className="pb-1 font-display text-lg font-bold">
+                  {salon.name}
+                </p>
+              </div>
+              <p className="ltr mt-2 text-start text-xs text-muted">
+                /salons/{salon.slug}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                <Badge tone={salon.status === "active" ? "green" : "red"}>
+                  {SALON_STATUS_LABELS[salon.status]}
+                </Badge>
+                <Badge tone={salon.is_published ? "brand" : "neutral"}>
+                  {salon.is_published ? "منشور" : "غير منشور"}
+                </Badge>
+              </div>
             </div>
           </Link>
         </li>
