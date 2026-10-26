@@ -44,6 +44,11 @@ async function BookingStatus({
           تم إرسال طلب الحجز بنجاح. سيصلك بريد عند تأكيد الصالون للموعد. احتفظي برابط هذه الصفحة لمتابعة الحجز.
         </p>
       )}
+      {isNew && b.status === "confirmed" && (
+        <p role="status" className="mb-4 rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          تم تأكيد حجزك بنجاح. احتفظي برابط هذه الصفحة لمتابعة الحجز أو إلغائه.
+        </p>
+      )}
       <Card>
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -71,10 +76,10 @@ async function BookingStatus({
             <SubmitButton variant="danger" pendingText="جارٍ الإلغاء…">
               إلغاء الحجز
             </SubmitButton>
-            <p className="mt-2 text-xs text-muted">يمكن إلغاء الحجز ما دام بانتظار التأكيد وقبل موعده.</p>
+            <p className="mt-2 text-xs text-muted">يمكن إلغاء الحجز قبل موعده، فيصبح الموعد متاحًا لغيرك.</p>
           </ActionForm>
         )}
-        {b.status === "confirmed" && (
+        {b.status === "confirmed" && !b.can_cancel && (
           <p className="mt-6 border-t border-line pt-4 text-sm text-muted">
             الحجز مؤكد. لإلغائه أو تعديله تواصلي مع الصالون مباشرة.
           </p>

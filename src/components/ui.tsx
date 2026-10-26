@@ -7,7 +7,7 @@ const buttonBase =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 disabled:cursor-not-allowed disabled:opacity-60";
 
 export const buttonStyles = {
-  primary: `${buttonBase} bg-brand-600 text-white hover:bg-brand-700`,
+  primary: `${buttonBase} bg-gradient-to-l from-brand-600 to-brand-700 text-white shadow-soft hover:from-brand-700 hover:to-brand-800`,
   secondary: `${buttonBase} border border-line bg-surface text-ink hover:bg-brand-50`,
   danger: `${buttonBase} border border-red-200 bg-surface text-red-700 hover:bg-red-50`,
   ghost: `${buttonBase} text-muted hover:bg-brand-50 hover:text-ink`,
@@ -18,14 +18,14 @@ export const inputStyles =
   "focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 disabled:bg-canvas";
 
 export function Card({ className = "", ...props }: ComponentProps<"div">) {
-  return <div className={`rounded-2xl border border-line bg-surface p-5 shadow-sm ${className}`} {...props} />;
+  return <div className={`rounded-2xl border border-line/80 bg-surface p-5 shadow-soft ${className}`} {...props} />;
 }
 
 export function PageHeader({ title, description, actions }: { title: string; description?: string; actions?: ReactNode }) {
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h1 className="text-2xl font-bold text-ink">{title}</h1>
+        <h1 className="font-display text-2xl font-bold text-ink">{title}</h1>
         {description && <p className="mt-1 text-sm text-muted">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap gap-2">{actions}</div>}

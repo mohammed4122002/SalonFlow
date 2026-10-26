@@ -1,7 +1,7 @@
 import { Field, inputStyles } from "@/components/ui";
 import type { Tables } from "@/lib/database.types";
 import { CURRENCIES, TIMEZONES } from "@/lib/format";
-import { optionalText, text } from "@/lib/forms";
+import { checkbox, optionalText, text } from "@/lib/forms";
 
 // Shared by "create salon" and "salon settings".
 export function SalonFields({ salon }: { salon?: Tables<"salons"> }) {
@@ -61,6 +61,20 @@ export function SalonFields({ salon }: { salon?: Tables<"salons"> }) {
           ))}
         </select>
       </Field>
+      <label className="flex items-start gap-2 rounded-xl border border-line p-3 text-sm sm:col-span-2">
+        <input
+          type="checkbox"
+          name="auto_confirm_bookings"
+          defaultChecked={salon?.auto_confirm_bookings ?? true}
+          className="mt-0.5 size-4 accent-brand-600"
+        />
+        <span>
+          <span className="font-semibold">تأكيد الحجوزات تلقائيًا</span>
+          <span className="block text-xs text-muted">
+            يُؤكَّد الحجز فور إنشائه من الموقع أو البوت، ويمكن للعميل إلغاؤه قبل موعده. أوقفه إذا أردت مراجعة كل حجز وتأكيده بنفسك.
+          </span>
+        </span>
+      </label>
     </div>
   );
 }
@@ -76,5 +90,6 @@ export function readSalonFields(formData: FormData) {
     email: optionalText(formData, "email"),
     timezone: text(formData, "timezone"),
     currency: text(formData, "currency"),
+    auto_confirm_bookings: checkbox(formData, "auto_confirm_bookings"),
   };
 }

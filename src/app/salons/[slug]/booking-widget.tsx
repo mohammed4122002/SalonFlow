@@ -20,6 +20,7 @@ export function BookingWidget({
   salonId,
   timezone,
   nowMs,
+  autoConfirm,
   currency,
   services,
   specialists,
@@ -27,6 +28,7 @@ export function BookingWidget({
   salonId: string;
   timezone: string;
   nowMs: number;
+  autoConfirm: boolean;
   currency: string;
   services: Service[];
   specialists: Specialist[];
@@ -226,10 +228,14 @@ export function BookingWidget({
           <Field label="ملاحظات (اختياري)">
             <textarea name="notes" rows={2} maxLength={1000} className={inputStyles} />
           </Field>
-          <SubmitButton className="w-full" pendingText="جارٍ إرسال الطلب…">
-            إرسال طلب الحجز
+          <SubmitButton className="w-full" pendingText="جارٍ الحجز…">
+            {autoConfirm ? "تأكيد الحجز" : "إرسال طلب الحجز"}
           </SubmitButton>
-          <p className="text-xs text-muted">سيكون الحجز «بانتظار التأكيد» حتى يؤكده الصالون، وستصلك رسالة بالبريد.</p>
+          <p className="text-xs text-muted">
+            {autoConfirm
+              ? "يُؤكَّد الحجز فورًا، وتصلك تفاصيله بالبريد مع رابط لإلغائه إذا احتجتِ."
+              : "سيكون الحجز «بانتظار التأكيد» حتى يؤكده الصالون، وستصلك رسالة بالبريد."}
+          </p>
         </ActionForm>
       )}
     </div>

@@ -1,7 +1,7 @@
 import { after, type NextRequest } from "next/server";
 import { UUID_RE, apiOk, badRequest, fromDbError, requireKey } from "@/lib/api";
 import type { BookingDetails } from "@/lib/booking";
-import { sendCustomerBookingEmail, sendSalonNewBookingEmail } from "@/lib/notifications";
+import { createdBookingEvent, sendCustomerBookingEmail, sendSalonNewBookingEmail } from "@/lib/notifications";
 import { siteOrigin } from "@/lib/site-url";
 import { createAnonClient } from "@/lib/supabase/anon";
 
@@ -17,7 +17,8 @@ type Body = {
 
 const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
 
-// Creates a booking request (status "pending"). Send an Idempotency-Key
+// Creates a booking: status "confirmed" when the salon auto-confirms, otherwise
+// "pending" until the owner confirms. Send an Idempotency-Key
 // header (or idempotency_key) so retries never create duplicates.
 export async function POST(req: NextRequest) {
   const key = requireKey(req);
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
   if (!booking.idempotent_replay) {
     const origin = await siteOrigin();
     after(async () => {
-      await sendCustomerBookingEmail("received", booking, null);
+      await sendCustomerBookingEmail(createdBookingEvent(booking), booking, null);
       await sendSalonNewBookingEmail(booking.salon.email ?? null, booking, `${origin}/dashboard/${booking.salon.id}/bookings`);
     });
   }

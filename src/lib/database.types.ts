@@ -214,16 +214,54 @@ export type Database = {
           },
         ]
       }
+      salon_photos: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          path: string
+          salon_id: string
+          sort_order: number
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          path: string
+          salon_id: string
+          sort_order?: number
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          path?: string
+          salon_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salon_photos_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       salons: {
         Row: {
           address: string | null
+          auto_confirm_bookings: boolean
           city: string | null
+          cover_path: string | null
           created_at: string
           currency: string
           description: string | null
           email: string | null
           id: string
           is_published: boolean
+          logo_path: string | null
           logo_url: string | null
           name: string
           owner_id: string
@@ -235,13 +273,16 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          auto_confirm_bookings?: boolean
           city?: string | null
+          cover_path?: string | null
           created_at?: string
           currency: string
           description?: string | null
           email?: string | null
           id?: string
           is_published?: boolean
+          logo_path?: string | null
           logo_url?: string | null
           name: string
           owner_id: string
@@ -253,13 +294,16 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          auto_confirm_bookings?: boolean
           city?: string | null
+          cover_path?: string | null
           created_at?: string
           currency?: string
           description?: string | null
           email?: string | null
           id?: string
           is_published?: boolean
+          logo_path?: string | null
           logo_url?: string | null
           name?: string
           owner_id?: string

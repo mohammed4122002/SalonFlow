@@ -19,7 +19,7 @@ Telegram Trigger ─► Conversation Router ─► Switch(action)
 - Fixed conversation steps, no AI: service → specialist (or «any») → day → time → name → phone → email → summary → confirm.
 - Each customer's state is kept in the workflow's Static Data, keyed by `chat_id`. A session expires after 30 minutes. «حجز» or «إلغاء» starts over.
 - Every HTTP node uses `neverError` + `fullResponse`, so the Code nodes read both the status code and `error.message` and show the Arabic message to the customer.
-- Success is shown **only** when the API answers `ok: true` and `status = "pending"`.
+- Success is shown **only** when the API answers `ok: true` with `status = "confirmed"` (salon auto-confirms, the default) or `"pending"` (manual confirmation).
 - `Idempotency-Key = tg-<chat_id>-<time the summary was shown>`, fixed for each confirmation. A retry after a network error cannot create two bookings.
 - `SLOT_UNAVAILABLE` sends the customer back to pick a day again.
 
@@ -28,13 +28,15 @@ Files: `router.js`, `services_menu.js`, `specialists_menu.js`, `slots_menu.js`, 
 ### 2. «SalonFlow — إشعارات صالون نور (Webhook)»
 
 ```
-Webhook POST /webhook/salonflow-noor ─► Crypto: HMAC-SHA256(body, secret) ─► Check Signature & Build Message ─► Telegram
+Webhook POST /webhook/salonflow-noor ─► Canonicalize Body ─► Crypto: HMAC-SHA256(canonical, secret) ─► Check Signature & Build Message ─► Telegram
 ```
 
 - Requests with a bad signature, or older than 10 minutes, are ignored.
 - Only bookings with `channel_ref = tg:<chat_id>` get a Telegram message. Website bookings and `test` events are skipped.
 
-File: `check_webhook.js`. A built-in Crypto node is used because self-hosted n8n blocks `require('crypto')` in Code nodes by default.
+- The platform signs **canonical JSON** (keys sorted recursively), and «Canonicalize Body» rebuilds the same text. This matters because n8n reorders the keys of the parsed body.
+
+Files: `canonicalize_body.js`, `check_webhook.js`. A built-in Crypto node is used because self-hosted n8n blocks `require('crypto')` in Code nodes by default.
 
 ## Setup (once per salon)
 

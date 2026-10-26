@@ -2,20 +2,65 @@
 
 @theme {
   --font-sans: var(--font-arabic), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display-ar), var(--font-arabic), ui-serif, serif;
 
   --color-brand-50: #fdf2f6;
   --color-brand-100: #fbe6ee;
   --color-brand-200: #f6c7d8;
+  --color-brand-300: #ee9dbb;
+  --color-brand-400: #dc6e98;
   --color-brand-500: #c2477a;
   --color-brand-600: #a83565;
   --color-brand-700: #8a2a53;
-  --color-brand-900: #4a1730;
+  --color-brand-800: #5e1c39;
+  --color-brand-900: #3a1024;
+  --color-brand-950: #22091a;
+
+  --color-gold-200: #f1e1c4;
+  --color-gold-300: #e6cb9a;
+  --color-gold-400: #d4af7a;
+  --color-gold-500: #b98f55;
 
   --color-ink: #1f1a24;
   --color-muted: #6b6474;
   --color-line: #ebe6ee;
   --color-surface: #ffffff;
   --color-canvas: #faf8fb;
+
+  --shadow-soft: 0 1px 2px rgb(31 26 36 / 0.04), 0 8px 24px -12px rgb(58 16 36 / 0.18);
+  --shadow-lift: 0 2px 4px rgb(31 26 36 / 0.05), 0 22px 44px -18px rgb(58 16 36 / 0.35);
+
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-float-slow: float 10s ease-in-out infinite;
+  --animate-blob: blob 18s ease-in-out infinite;
+  --animate-shimmer: shimmer 6s linear infinite;
+  --animate-marquee: marquee 38s linear infinite;
+  --animate-fade-up: fade-up 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-pulse-ring: pulse-ring 2.4s cubic-bezier(0.2, 0.7, 0.2, 1) infinite;
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0) rotate(var(--tilt, 0deg)); }
+    50% { transform: translateY(-14px) rotate(var(--tilt, 0deg)); }
+  }
+  @keyframes blob {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(40px, -30px) scale(1.12); }
+    66% { transform: translate(-30px, 25px) scale(0.92); }
+  }
+  @keyframes shimmer {
+    to { background-position: 200% center; }
+  }
+  @keyframes marquee {
+    to { transform: translateX(50%); }
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes pulse-ring {
+    0% { box-shadow: 0 0 0 0 rgb(212 175 122 / 0.55); }
+    80%, 100% { box-shadow: 0 0 0 14px rgb(212 175 122 / 0); }
+  }
 }
 
 :root {
@@ -31,4 +76,49 @@ body {
 .ltr {
   direction: ltr;
   unicode-bidi: isolate;
+}
+
+/* Gold-to-rose animated text used for hero accents. */
+.text-shine {
+  background: linear-gradient(90deg, var(--color-gold-300), var(--color-brand-300), var(--color-gold-200), var(--color-gold-300));
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: var(--animate-shimmer);
+}
+
+/* Subtle noise + grid texture for dark hero sections. */
+.hero-texture {
+  background-image:
+    radial-gradient(circle at 1px 1px, rgb(255 255 255 / 0.07) 1px, transparent 0);
+  background-size: 22px 22px;
+}
+
+/* Scroll reveal: elements start hidden only when JS has marked the page ready. */
+.js-reveal [data-reveal] {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.8s cubic-bezier(0.2, 0.7, 0.2, 1),
+    transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+.js-reveal [data-reveal].is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .js-reveal [data-reveal] {
+    opacity: 1;
+    transform: none;
+  }
 }

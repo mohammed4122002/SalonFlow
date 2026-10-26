@@ -89,6 +89,10 @@ begin
   insert into public.working_hours (salon_id, day_of_week, start_time, end_time)
     select v_salon_b, d, '09:00', '17:00' from generate_series(0, 6) d;
 
+  -- The checks below exercise the manual flow (pending → owner confirms);
+  -- automatic confirmation is tested at the end.
+  update public.salons set auto_confirm_bookings = false where id in (v_salon, v_salon_b);
+
   -- ===================== Phase 3: availability & booking (as anon) =========
   perform tests.login_anon();
   select count(*) into v_n from public.get_available_slots(v_salon, v_cut, v_huda, v_day);
@@ -326,6 +330,45 @@ begin
   perform tests.login_anon();
   perform tests.throws('api: rotated key no longer works', format('select public.api_services(%L)', v_key), 'UNAUTHORIZED');
   perform tests.logout();
+
+  -- ===================== Automatic confirmation =============================
+  update public.salons set auto_confirm_bookings = true where id = v_salon;
+  perform tests.login_anon();
+  v_t := (v_day + time '16:00') at time zone 'UTC';
+  v_res := public.create_booking(v_salon, v_cut, v_huda, v_t, 'Auto Customer', '+970592222222', 'auto@t.local');
+  perform tests.ok('auto-confirm: web booking created as confirmed', v_res ->> 'status' = 'confirmed', v_res ->> 'status');
+  perform tests.ok('auto-confirm: customer may cancel the confirmed booking', (v_res ->> 'can_cancel')::boolean);
+  v_res2 := public.cancel_booking_by_token((v_res ->> 'token')::uuid);
+  perform tests.ok('auto-confirm: customer cancel frees the slot',
+    v_res2 ->> 'status' = 'cancelled' and exists (
+      select 1 from public.get_available_slots(v_salon, v_cut, v_huda, v_day) where starts_at = v_t));
+  perform tests.logout();
+
+  perform tests.login(v_a);
+  v_key := public.rotate_integration_key(v_salon);
+  perform tests.logout();
+  perform tests.login_anon();
+  v_res := public.api_create_booking(v_key, v_cut, v_sara, (v_day + time '12:00') at time zone 'UTC', 'Bot Auto', '+970593333333',
+                                     'botauto@t.local', null, 'tg:999', 'idem-auto-0001');
+  perform tests.ok('auto-confirm: API booking created as confirmed', v_res ->> 'status' = 'confirmed', v_res ->> 'status');
+  perform tests.ok('auto-confirm: API cancel of confirmed booking',
+    (public.api_cancel_booking(v_key, (v_res ->> 'id')::uuid)) ->> 'status' = 'cancelled');
+  perform tests.logout();
+
+  perform tests.login_anon();
+  perform public.create_booking(v_salon, v_cut, v_huda, (v_day + time '16:00') at time zone 'UTC', 'Busy One', '+970594444444', 'b1@t.local');
+  perform public.create_booking(v_salon, v_cut, v_huda, (v_day + 1 + time '10:00') at time zone 'UTC', 'Busy One', '+970594444444', 'b1@t.local');
+  perform public.create_booking(v_salon, v_cut, v_huda, (v_day + 1 + time '12:00') at time zone 'UTC', 'Busy One', '+970594444444', 'b1@t.local');
+  perform tests.throws('auto-confirm: max 3 upcoming bookings per phone (confirmed count too)',
+    format($q$select public.create_booking(%L, %L, %L, %L, 'Busy One', '+970594444444', 'b1@t.local')$q$,
+           v_salon, v_cut, v_huda, (v_day + 1 + time '14:00') at time zone 'UTC'), 'TOO_MANY_PENDING');
+  perform tests.logout();
+
+  -- A manual salon still keeps confirmed bookings out of the customer's hands.
+  update public.salons set auto_confirm_bookings = false where id = v_salon;
+  select public_token into v_token from public.bookings where id = v_booking;
+  perform tests.ok('manual salon: confirmed booking still not cancellable by customer',
+    not (public.get_booking_by_token(v_token) ->> 'can_cancel')::boolean);
 end $$;
 
 select id, passed, name, detail from tests.results order by id;

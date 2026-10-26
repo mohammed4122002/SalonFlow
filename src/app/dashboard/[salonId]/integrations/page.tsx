@@ -18,9 +18,9 @@ const ENDPOINTS = [
   { method: "GET", path: "/services", desc: "الخدمات النشطة مع المدة والسعر." },
   { method: "GET", path: "/specialists?service_id=…", desc: "الأخصائيات (اختياريًا لخدمة معيّنة)." },
   { method: "GET", path: "/availability?service_id=…&date=YYYY-MM-DD&specialist_id=…", desc: "المواعيد المتاحة ليوم معيّن." },
-  { method: "POST", path: "/bookings", desc: "إنشاء طلب حجز (بانتظار التأكيد)." },
+  { method: "POST", path: "/bookings", desc: "إنشاء حجز (مؤكد فورًا إذا كان التأكيد التلقائي مفعّلًا، وإلا بانتظار التأكيد)." },
   { method: "GET", path: "/bookings/{id}", desc: "حالة الحجز وتفاصيله." },
-  { method: "POST", path: "/bookings/{id}/cancel", desc: "إلغاء حجز بانتظار التأكيد بطلب من العميل." },
+  { method: "POST", path: "/bookings/{id}/cancel", desc: "إلغاء حجز قادم بطلب من العميل." },
 ];
 
 export default function IntegrationsPage({ params }: PageProps<"/dashboard/[salonId]/integrations">) {
@@ -223,7 +223,8 @@ Content-Type: application/json
           </li>
           <li>
             لا تُبلغ العميل بنجاح الحجز إلا إذا كان الرد <span className="ltr">ok: true</span> وحالة الحجز{" "}
-            <span className="ltr">pending</span>. عند الخطأ اعرض <span className="ltr">error.message</span> (بالعربية).
+            <span className="ltr">confirmed</span> (تأكيد تلقائي) أو <span className="ltr">pending</span> (بانتظار تأكيد الصالون). عند
+            الخطأ اعرض <span className="ltr">error.message</span> (بالعربية).
           </li>
           <li>
             أرسل <span className="ltr">channel_ref: &quot;tg:&lt;chat_id&gt;&quot;</span> مع الحجز، وأضف Webhook Trigger يستقبل إشعارات

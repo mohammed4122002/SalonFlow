@@ -4,7 +4,8 @@ import type { BookingDetails } from "@/lib/booking";
 import { sendCustomerBookingEmail } from "@/lib/notifications";
 import { createAnonClient } from "@/lib/supabase/anon";
 
-// Customer-initiated cancellation of a pending, future booking.
+// Customer-initiated cancellation of a future booking: pending ones always,
+// confirmed ones too when the salon auto-confirms bookings.
 export async function POST(req: NextRequest, ctx: RouteContext<"/api/v1/bookings/[id]/cancel">) {
   const key = requireKey(req);
   if (typeof key !== "string") return key;
