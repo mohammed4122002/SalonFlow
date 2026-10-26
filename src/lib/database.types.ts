@@ -217,6 +217,7 @@ export type Database = {
       salons: {
         Row: {
           address: string | null
+          auto_confirm_bookings: boolean
           city: string | null
           created_at: string
           currency: string
@@ -235,6 +236,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          auto_confirm_bookings?: boolean
           city?: string | null
           created_at?: string
           currency: string
@@ -253,6 +255,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          auto_confirm_bookings?: boolean
           city?: string | null
           created_at?: string
           currency?: string

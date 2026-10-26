@@ -182,6 +182,7 @@ async function SalonDetails({ params }: { params: PageProps<"/salons/[slug]">["p
                 salonId={salon.id}
                 timezone={salon.timezone}
                 nowMs={now.getTime()}
+                autoConfirm={salon.auto_confirm_bookings}
                 currency={salon.currency}
                 services={services ?? []}
                 specialists={(specialists ?? []).map((sp) => ({

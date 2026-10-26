@@ -1,5 +1,5 @@
 // Interprets POST /bookings. Success is reported ONLY when the platform
-// answered ok:true with status "pending".
+// answered ok:true with status "confirmed" (auto-confirm) or "pending".
 const store = $getWorkflowStaticData('global');
 const chatId = $('Conversation Router').first().json.chatId;
 const esc = (x) => String(x ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
@@ -7,13 +7,14 @@ const res = $input.first().json;
 const s = store.sessions?.[chatId] || {};
 const b = res.body?.data;
 
-if ((res.statusCode === 201 || res.statusCode === 200) && res.body?.ok && b?.status === 'pending') {
+if ((res.statusCode === 201 || res.statusCode === 200) && res.body?.ok && (b?.status === 'confirmed' || b?.status === 'pending')) {
   store.sessions[chatId] = { step: 'done', updatedAt: Date.now() };
   const when = DateTime.fromISO(b.starts_at).setZone(b.timezone).setLocale('ar').toFormat('cccc d/M — HH:mm');
   return [{ json: { chatId, text:
-    `✅ تم استلام طلب حجزك وهو <b>بانتظار تأكيد الصالون</b>.\n` +
+    (b.status === 'confirmed' ? `✅ تم <b>تأكيد</b> حجزك، ننتظرك!\n` : `✅ تم استلام طلب حجزك وهو <b>بانتظار تأكيد الصالون</b>.\n`) +
     `الخدمة: ${esc(b.service?.name)}\nالأخصائية: ${esc(b.specialist?.full_name)}\nالموعد: ${esc(when)}\n` +
-    `رقم الحجز: <code>${esc(String(b.id).slice(0, 8))}</code>\n\nسنرسل لك رسالة هنا عند التأكيد.` } }];
+    `رقم الحجز: <code>${esc(String(b.id).slice(0, 8))}</code>` +
+    (b.status === 'pending' ? `\n\nسنرسل لك رسالة هنا عند التأكيد.` : '') } }];
 }
 
 const code = res.body?.error?.code;

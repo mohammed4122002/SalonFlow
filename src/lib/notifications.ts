@@ -75,6 +75,10 @@ function button(href: string, label: string): string {
 
 export type BookingEmailEvent = "received" | "confirmed" | "cancelled";
 
+/** Email event for a newly created booking (auto-confirming salons create it as confirmed). */
+export const createdBookingEvent = (b: BookingDetails): BookingEmailEvent =>
+  b.status === "confirmed" ? "confirmed" : "received";
+
 /** Email to the customer about their booking. `manageUrl` links to the token page. */
 export function sendCustomerBookingEmail(event: BookingEmailEvent, b: BookingDetails, manageUrl: string | null) {
   const titles: Record<BookingEmailEvent, string> = {
@@ -84,22 +88,24 @@ export function sendCustomerBookingEmail(event: BookingEmailEvent, b: BookingDet
   };
   const intro: Record<BookingEmailEvent, string> = {
     received: `مرحبًا ${escapeHtml(b.customer.full_name)}، طلبك بانتظار تأكيد الصالون وسنرسل لك رسالة عند التأكيد.`,
-    confirmed: `مرحبًا ${escapeHtml(b.customer.full_name)}، أكّد الصالون موعدك. ننتظرك!`,
+    confirmed: `مرحبًا ${escapeHtml(b.customer.full_name)}، تم تأكيد موعدك. ننتظرك!`,
     cancelled: `مرحبًا ${escapeHtml(b.customer.full_name)}، تم إلغاء هذا الحجز وأصبح الموعد متاحًا لغيرك.`,
   };
   const body =
     `<p>${intro[event]}</p>${details(b)}` +
-    (manageUrl && event !== "cancelled" ? button(manageUrl, "عرض الحجز أو إلغاؤه") : "");
+    (manageUrl && event !== "cancelled" ? button(manageUrl, b.can_cancel ? "عرض الحجز أو إلغاؤه" : "عرض الحجز") : "");
   return sendEmail(b.customer.email, `${titles[event]} — ${b.salon.name}`, layout(titles[event], body));
 }
 
-/** Email to the salon (its contact address) about a new booking request. */
+/** Email to the salon (its contact address) about a new booking. */
 export function sendSalonNewBookingEmail(salonEmail: string | null, b: BookingDetails, dashboardUrl: string) {
   if (!salonEmail) return Promise.resolve({ sent: false, reason: "no_salon_email" });
+  const confirmed = b.status === "confirmed";
+  const title = confirmed ? "حجز جديد مؤكد" : "حجز جديد بانتظار التأكيد";
   const body =
-    `<p>طلب حجز جديد من <b>${escapeHtml(b.customer.full_name)}</b> (${escapeHtml(b.customer.phone)}).</p>${details(b)}` +
-    button(dashboardUrl, "تأكيد أو إلغاء الحجز");
-  return sendEmail(salonEmail, `حجز جديد بانتظار التأكيد — ${b.service.name}`, layout("حجز جديد بانتظار التأكيد", body));
+    `<p>${confirmed ? "حجز جديد" : "طلب حجز جديد"} من <b>${escapeHtml(b.customer.full_name)}</b> (${escapeHtml(b.customer.phone)}).</p>${details(b)}` +
+    button(dashboardUrl, confirmed ? "عرض الحجوزات" : "تأكيد أو إلغاء الحجز");
+  return sendEmail(salonEmail, `${title} — ${b.service.name}`, layout(title, body));
 }
 
 // ---------------------------------------------------------------------------

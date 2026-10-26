@@ -14,11 +14,11 @@ export async function cancelByToken(token: string): Promise<ActionState> {
   if (error || !data) return { error: "تعذّر إلغاء الحجز." };
 
   const booking = data as unknown as BookingDetails;
-  const wasPending = (before as unknown as BookingDetails | null)?.status === "pending";
+  const wasActive = (before as unknown as BookingDetails | null)?.status !== "cancelled";
   if (booking.status !== "cancelled") {
     return { error: "لا يمكن إلغاء هذا الحجز من هنا. تواصلي مع الصالون مباشرة." };
   }
-  if (wasPending) after(() => sendCustomerBookingEmail("cancelled", booking, null).then(() => undefined));
+  if (wasActive) after(() => sendCustomerBookingEmail("cancelled", booking, null).then(() => undefined));
   refresh();
   return { success: "تم إلغاء الحجز، وأصبح الموعد متاحًا." };
 }

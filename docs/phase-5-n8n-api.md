@@ -41,9 +41,9 @@ Authorization: Bearer sf_live_xxxxxxxx…      (أو X-API-Key: sf_live_…)
 | GET | `/services` | الخدمات النشطة: `id`، `name`، `duration_minutes`، `price`، `currency` |
 | GET | `/specialists?service_id=` | الأخصائيات (اختياريًا لخدمة معيّنة) مع `service_ids` |
 | GET | `/availability?service_id=&date=YYYY-MM-DD[&specialist_id=]` | المواعيد الحرة: `starts_at` و`ends_at` (UTC)، و`local_time` (HH:MM بتوقيت الصالون)، و`specialist_id`، و`specialist_name` |
-| POST | `/bookings` | إنشاء طلب حجز (`pending`). يرد 201، أو 200 عند إعادة نفس الطلب |
+| POST | `/bookings` | إنشاء حجز: `confirmed` إذا كان التأكيد التلقائي مفعّلًا للصالون، وإلا `pending`. يرد 201، أو 200 عند إعادة نفس الطلب |
 | GET | `/bookings/{id}` | حالة الحجز وتفاصيله (لحجوزات هذا الصالون فقط) |
-| POST | `/bookings/{id}/cancel` | إلغاء حجز بانتظار التأكيد بطلب من العميل |
+| POST | `/bookings/{id}/cancel` | إلغاء حجز قادم بطلب من العميل. المؤكد يُلغى فقط إذا كان التأكيد التلقائي مفعّلًا |
 
 ### إنشاء حجز
 
@@ -64,7 +64,7 @@ Content-Type: application/json
 ```
 
 - **Idempotency-Key** (8–120 حرفًا): إعادة الطلب بنفس المفتاح تعيد نفس الحجز (`idempotent_replay: true`، و200) ولا تُنشئ حجزًا مكررًا. إعادة الإرسال آمنة عند انقطاع الشبكة أو انتهاء المهلة.
-- **لا تؤكد للعميل نجاح الحجز** إلا إذا كان الرد `ok: true` و`data.status = "pending"`. عند `SLOT_UNAVAILABLE` اعرض المواعيد من جديد.
+- **لا تؤكد للعميل نجاح الحجز** إلا إذا كان الرد `ok: true`. إذا كان `data.status = "confirmed"` فالحجز مؤكد، وإذا كان `"pending"` فهو بانتظار تأكيد الصالون. عند `SLOT_UNAVAILABLE` اعرض المواعيد من جديد.
 - الطلبات المتزامنة على نفس الموعد ينجح منها واحد فقط، والبقية ترد 409.
 
 ## إشعارات Webhook (من المنصة إلى n8n)

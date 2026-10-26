@@ -306,7 +306,7 @@ async function loadBookingDetails(bookingId: string, salonId: string): Promise<B
     .select(
       "id, status, starts_at, ends_at, price, notes, source, channel_ref, cancelled_at, created_at, public_token, " +
         "customers(full_name, phone, email), services(id, name, duration_minutes), specialists(id, full_name), " +
-        "salons(id, name, slug, phone, address, currency, timezone)",
+        "salons(id, name, slug, phone, address, currency, timezone, auto_confirm_bookings)",
     )
     .eq("id", bookingId)
     .eq("salon_id", salonId)
@@ -326,7 +326,9 @@ async function loadBookingDetails(bookingId: string, salonId: string): Promise<B
     channel_ref: b.channel_ref,
     cancelled_at: b.cancelled_at,
     created_at: b.created_at,
-    can_cancel: b.status === "pending" && new Date(b.starts_at) > new Date(),
+    can_cancel:
+      new Date(b.starts_at) > new Date() &&
+      (b.status === "pending" || (b.status === "confirmed" && b.salons.auto_confirm_bookings)),
     salon: { id: b.salons.id, name: b.salons.name, slug: b.salons.slug, phone: b.salons.phone, address: b.salons.address },
     service: b.services,
     specialist: b.specialists,
@@ -350,7 +352,16 @@ type BookingRow = {
   customers: { full_name: string; phone: string; email: string } | null;
   services: { id: string; name: string; duration_minutes: number } | null;
   specialists: { id: string; full_name: string } | null;
-  salons: { id: string; name: string; slug: string; phone: string | null; address: string | null; currency: string; timezone: string } | null;
+  salons: {
+    id: string;
+    name: string;
+    slug: string;
+    phone: string | null;
+    address: string | null;
+    currency: string;
+    timezone: string;
+    auto_confirm_bookings: boolean;
+  } | null;
 };
 
 // Email the customer and notify the salon's n8n workflow, after the response.

@@ -27,7 +27,7 @@ export const BOOKING_ERRORS = {
   SALON_UNAVAILABLE: { status: 403, message: "الصالون لا يستقبل حجوزات حاليًا." },
   SERVICE_UNAVAILABLE: { status: 422, message: "هذه الخدمة غير متاحة." },
   SLOT_UNAVAILABLE: { status: 409, message: "هذا الموعد لم يعد متاحًا، اختر موعدًا آخر." },
-  TOO_MANY_PENDING: { status: 429, message: "لديك 3 حجوزات بانتظار التأكيد، انتظر تأكيدها قبل حجز المزيد." },
+  TOO_MANY_PENDING: { status: 429, message: "لديك 3 حجوزات قادمة بالفعل، لا يمكن حجز المزيد حاليًا." },
   INVALID_CUSTOMER: { status: 422, message: "يرجى إدخال الاسم ورقم هاتف وبريد إلكتروني صحيحين." },
   INVALID_DATE: { status: 422, message: "التاريخ غير صالح (اليوم حتى 90 يومًا قادمة)." },
   NOT_FOUND: { status: 404, message: "الحجز غير موجود." },

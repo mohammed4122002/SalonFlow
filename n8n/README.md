@@ -19,7 +19,7 @@ Telegram Trigger ─► Conversation Router ─► Switch(action)
 - Fixed conversation steps, no AI: service → specialist (or «any») → day → time → name → phone → email → summary → confirm.
 - Each customer's state is kept in the workflow's Static Data, keyed by `chat_id`. A session expires after 30 minutes. «حجز» or «إلغاء» starts over.
 - Every HTTP node uses `neverError` + `fullResponse`, so the Code nodes read both the status code and `error.message` and show the Arabic message to the customer.
-- Success is shown **only** when the API answers `ok: true` and `status = "pending"`.
+- Success is shown **only** when the API answers `ok: true` with `status = "confirmed"` (salon auto-confirms, the default) or `"pending"` (manual confirmation).
 - `Idempotency-Key = tg-<chat_id>-<time the summary was shown>`, fixed for each confirmation. A retry after a network error cannot create two bookings.
 - `SLOT_UNAVAILABLE` sends the customer back to pick a day again.
 

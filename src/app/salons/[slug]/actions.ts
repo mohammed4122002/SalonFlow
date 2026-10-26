@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { bookingErrorMessage, type BookingDetails } from "@/lib/booking";
 import { type ActionState, optionalText, text } from "@/lib/forms";
-import { sendCustomerBookingEmail, sendSalonNewBookingEmail } from "@/lib/notifications";
+import { createdBookingEvent, sendCustomerBookingEmail, sendSalonNewBookingEmail } from "@/lib/notifications";
 import { siteOrigin } from "@/lib/site-url";
 import { createClient } from "@/lib/supabase/server";
 
@@ -63,7 +63,7 @@ export async function submitBooking(salonId: string, _: ActionState, formData: F
   const origin = await siteOrigin();
 
   after(async () => {
-    await sendCustomerBookingEmail("received", booking, `${origin}/bookings/${booking.token}`);
+    await sendCustomerBookingEmail(createdBookingEvent(booking), booking, `${origin}/bookings/${booking.token}`);
     await sendSalonNewBookingEmail(booking.salon.email ?? null, booking, `${origin}/dashboard/${salonId}/bookings`);
   });
 
